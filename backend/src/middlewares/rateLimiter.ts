@@ -11,12 +11,24 @@ export const globalLimiter = rateLimit({
   message: { error: 'Demasiadas solicitudes, intenta más tarde' },
 });
 
+// 5 intentos por IP+usuario: protege contra fuerza bruta sin bloquear a todo un
+// local que comparte IP (CGNAT de redes moviles el dia de la eleccion)
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Demasiados intentos de login. Espera 15 minutos' },
+  keyGenerator: (req: Request) => `${req.ip}:${(req.body?.username ?? '').toLowerCase()}`,
+  message: { error: 'Demasiados intentos de login para este usuario. Espera 15 minutos' },
+});
+
+// Tope amplio por IP contra enumeracion de usuarios desde una misma fuente
+export const loginIpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 50,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiados intentos de login desde esta red. Espera 15 minutos' },
 });
 
 export const uploadLimiter = rateLimit({

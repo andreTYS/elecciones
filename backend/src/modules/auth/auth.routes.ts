@@ -5,7 +5,7 @@ import { prisma } from '../../config/database';
 import { redis } from '../../config/redis';
 import { signAccessToken, newRefreshToken } from '../../utils/jwt';
 import { sha256 } from '../../utils/crypto';
-import { loginLimiter } from '../../middlewares/rateLimiter';
+import { loginLimiter, loginIpLimiter } from '../../middlewares/rateLimiter';
 import { authenticate } from '../../middlewares/auth';
 import { audit } from '../../utils/audit';
 import { env, isProd } from '../../config/env';
@@ -40,7 +40,7 @@ const loginSchema = z.object({
 });
 
 // POST /api/auth/login
-router.post('/login', loginLimiter, async (req: Request, res: Response) => {
+router.post('/login', loginIpLimiter, loginLimiter, async (req: Request, res: Response) => {
   const { username, password } = loginSchema.parse(req.body);
 
   const user = await prisma.user.findUnique({ where: { username } });
