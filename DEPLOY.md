@@ -1,22 +1,22 @@
 # Guía de despliegue — VotoControl Moquegua 2026
 
 VPS: AlmaLinux · Hostinger · `76.13.234.161` · Docker + Traefik ya instalados.
-Dominio: `votocontrol.moqueguasoft.com`
+Dominio: `votos.masredespro.com`
 
 ---
 
 ## Paso 0 — DNS (una sola vez)
 
-En el panel de tu dominio `moqueguasoft.com`, crea un registro:
+En el panel de tu dominio `masredespro.com`, crea un registro:
 
 ```
-Tipo: A    Nombre: votocontrol    Valor: 76.13.234.161    TTL: 300
+Tipo: A    Nombre: votos    Valor: 76.13.234.161    TTL: 300
 ```
 
 Verifica antes de continuar (Traefik no puede emitir el certificado SSL sin esto):
 
 ```bash
-dig +short votocontrol.moqueguasoft.com   # debe responder 76.13.234.161
+dig +short votos.masredespro.com   # debe responder 76.13.234.161
 ```
 
 ## Paso 1 — Preparar el VPS (una sola vez)
@@ -26,8 +26,8 @@ Conéctate por SSH y clona el repo:
 ```bash
 ssh root@76.13.234.161
 
-mkdir -p /opt/votocontrol
-cd /opt/votocontrol
+mkdir -p /opt/sites/votos.masredespro.com
+cd /opt/sites/votos.masredespro.com
 git clone https://github.com/andreTYS/elecciones.git .
 ```
 
@@ -47,7 +47,7 @@ docker network create traefik-network
 ## Paso 2 — Crear el `.env` de producción (una sola vez)
 
 ```bash
-cd /opt/votocontrol
+cd /opt/sites/votos.masredespro.com
 DB_PASS=$(openssl rand -hex 16)
 
 cat > .env << EOF
@@ -59,7 +59,7 @@ JWT_SECRET=$(openssl rand -base64 64 | tr -d '\n')
 JWT_REFRESH_SECRET=$(openssl rand -base64 64 | tr -d '\n')
 GEMINI_ENCRYPT_KEY=$(openssl rand -base64 32)
 NODE_ENV=production
-CORS_ORIGIN=https://votocontrol.moqueguasoft.com
+CORS_ORIGIN=https://votos.masredespro.com
 UPLOAD_DIR=/app/uploads
 EOF
 
@@ -72,7 +72,7 @@ no podrás descifrar la API Key guardada (tendrías que volver a ingresarla).
 ## Paso 3 — Primer despliegue
 
 ```bash
-cd /opt/votocontrol
+cd /opt/sites/votos.masredespro.com
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
@@ -95,11 +95,11 @@ docker exec votocontrol-backend node dist/prisma/seed.js
 ```bash
 docker compose -f docker-compose.prod.yml ps          # 4 servicios "running"
 docker logs votocontrol-backend --tail 20              # "VotoControl API escuchando..."
-curl -s https://votocontrol.moqueguasoft.com/api/health
+curl -s https://votos.masredespro.com/api/health
 # → {"ok":true,...}
 ```
 
-Abre `https://votocontrol.moqueguasoft.com` en el navegador: debe cargar el login
+Abre `https://votos.masredespro.com` en el navegador: debe cargar el login
 con candado verde (SSL de Let's Encrypt, puede tardar ~1 min la primera vez).
 
 ## Paso 5 — Configuración inicial en la app
@@ -137,7 +137,7 @@ Cada push a `main` valida (typecheck + build) y despliega solo. Para activarlo:
 
 ```bash
 # Deploy manual (si no quieres esperar al Actions)
-cd /opt/votocontrol && git pull origin main
+cd /opt/sites/votos.masredespro.com && git pull origin main
 docker compose -f docker-compose.prod.yml up -d --build
 
 # Logs en vivo

@@ -57,7 +57,7 @@ npm run dev                 # http://localhost:5173 (proxy /api → 4000)
 
 ## Despliegue (VPS)
 
-1. Crear `/opt/votocontrol/.env` en el VPS:
+1. Crear `/opt/sites/votos.masredespro.com/.env` en el VPS:
 
 ```env
 DATABASE_URL=postgresql://votocontrol:PASSWORD@votocontrol-db:5432/votocontrol

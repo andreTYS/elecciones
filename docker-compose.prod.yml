@@ -17,7 +17,7 @@ services:
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - GEMINI_ENCRYPT_KEY=${GEMINI_ENCRYPT_KEY}
       - NODE_ENV=production
-      - CORS_ORIGIN=https://votocontrol.moqueguasoft.com
+      - CORS_ORIGIN=https://votos.masredespro.com
       - UPLOAD_DIR=/app/uploads
     volumes:
       - votocontrol-uploads:/app/uploads
@@ -25,7 +25,7 @@ services:
       - traefik-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.votocontrol-api.rule=Host(`votocontrol.moqueguasoft.com`) && (PathPrefix(`/api`) || PathPrefix(`/socket.io`))"
+      - "traefik.http.routers.votocontrol-api.rule=Host(`votos.masredespro.com`) && (PathPrefix(`/api`) || PathPrefix(`/socket.io`))"
       - "traefik.http.routers.votocontrol-api.entrypoints=websecure"
       - "traefik.http.routers.votocontrol-api.tls.certresolver=letsencrypt"
       - "traefik.http.services.votocontrol-api.loadbalancer.server.port=4000"
@@ -40,7 +40,7 @@ services:
       - traefik-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.votocontrol.rule=Host(`votocontrol.moqueguasoft.com`)"
+      - "traefik.http.routers.votocontrol.rule=Host(`votos.masredespro.com`)"
       - "traefik.http.routers.votocontrol.entrypoints=websecure"
       - "traefik.http.routers.votocontrol.tls.certresolver=letsencrypt"
       - "traefik.http.routers.votocontrol.priority=1"
