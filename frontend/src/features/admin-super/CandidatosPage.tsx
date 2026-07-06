@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../shared/api/client';
+import { PageTitle } from '../../shared/components/icons';
 
 interface Candidato { id: number; nombre: string; agrupacion: string; numero: number; color: string; activo: boolean }
 
@@ -19,7 +20,7 @@ export default function CandidatosPage() {
       nombre: form.nombre, agrupacion: form.agrupacion, numero: Number(form.numero), color: form.color,
     }),
     onSuccess: () => {
-      setMsg({ tipo: 'ok', texto: '✓ Candidato registrado' });
+      setMsg({ tipo: 'ok', texto: 'Candidato registrado correctamente' });
       setForm({ nombre: '', agrupacion: '', numero: '', color: '#1B3A6B' });
       qc.invalidateQueries({ queryKey: ['candidatos'] });
     },
@@ -35,7 +36,7 @@ export default function CandidatosPage() {
 
   return (
     <div>
-      <h2>🎖️ Candidatos y Agrupaciones</h2>
+      <PageTitle icon="flag">Candidatos y Agrupaciones</PageTitle>
 
       <form className="tarjeta" onSubmit={submit}>
         <h3>Registrar candidato</h3>

@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../shared/api/client';
+import { Icon, PageTitle } from '../../shared/components/icons';
 
 const TIPOS = ['Suplantación', 'Material incompleto', 'Coacción a votantes', 'Retraso en instalación', 'Problema con miembros de mesa', 'Otro'];
 
@@ -21,7 +22,7 @@ export default function IncidenciaPage() {
     setMsg(null);
     try {
       await api.post('/incidencias', { tipo, descripcion, severidad });
-      setMsg({ tipo: 'ok', texto: '✓ Incidencia enviada a tu coordinador' });
+      setMsg({ tipo: 'ok', texto: 'Incidencia enviada a tu coordinador' });
       setDescripcion('');
     } catch (err: any) {
       setMsg({ tipo: 'error', texto: err.response?.data?.error || 'Error al enviar' });
@@ -30,10 +31,11 @@ export default function IncidenciaPage() {
 
   return (
     <div>
-      <h2>⚠️ Reportar Incidencia</h2>
+      <PageTitle icon="alert">Reportar Incidencia</PageTitle>
       {!tieneActaConfirmada && (
         <div className="alerta-msg alerta-error">
-          🔒 El envío de incidencias se habilita después de confirmar tu acta de escrutinio.
+          <Icon name="lock" size={16} />
+          El envío de incidencias se habilita después de confirmar tu acta de escrutinio.
         </div>
       )}
       <form className="tarjeta" onSubmit={enviar}>
@@ -43,15 +45,22 @@ export default function IncidenciaPage() {
         </select>
         <label>Severidad</label>
         <select value={severidad} onChange={(e) => setSeveridad(e.target.value as typeof severidad)}>
-          <option value="ALTA">🔴 Alta</option>
-          <option value="MEDIA">🟡 Media</option>
-          <option value="BAJA">🟢 Baja</option>
+          <option value="ALTA">Alta</option>
+          <option value="MEDIA">Media</option>
+          <option value="BAJA">Baja</option>
         </select>
         <label>Descripción</label>
         <textarea rows={4} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} minLength={5} required />
-        {msg && <div className={`alerta-msg ${msg.tipo === 'ok' ? 'alerta-ok' : 'alerta-error'}`}>{msg.texto}</div>}
+        {msg && (
+          <div className={`alerta-msg ${msg.tipo === 'ok' ? 'alerta-ok' : 'alerta-error'}`}>
+            <Icon name={msg.tipo === 'ok' ? 'check' : 'alert'} size={16} />
+            {msg.texto}
+          </div>
+        )}
         <div className="acciones">
-          <button className="btn btn-rojo" disabled={!tieneActaConfirmada}>🚨 Enviar al coordinador</button>
+          <button className="btn btn-rojo" disabled={!tieneActaConfirmada}>
+            <Icon name="send" size={15} /> Enviar al coordinador
+          </button>
         </div>
       </form>
     </div>

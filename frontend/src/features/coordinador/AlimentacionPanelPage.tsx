@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../shared/api/client';
+import { PageTitle } from '../../shared/components/icons';
 
 interface PanelRow {
   id: number; nombre: string; mesa: string | null;
@@ -21,7 +22,7 @@ export default function AlimentacionPanelPage() {
 
   return (
     <div>
-      <h2>🍽️ Panel de Alimentación</h2>
+      <PageTitle icon="coffee">Panel de Alimentación</PageTitle>
       <div className="tarjeta tabla-scroll">
         <table>
           <thead><tr><th>Personero</th><th>Mesa</th><th>Desayuno</th><th>Almuerzo</th><th>Cena</th></tr></thead>

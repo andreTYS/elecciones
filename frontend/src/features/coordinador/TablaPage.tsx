@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../shared/api/client';
+import { Icon, PageTitle } from '../../shared/components/icons';
 
 interface ActaRow {
   id: number; confirmada: boolean; votosNulos: number; votosBlancos: number; createdAt: string;
@@ -26,9 +27,11 @@ export default function TablaPage() {
 
   return (
     <div>
-      <h2>📋 Tabla Completa</h2>
+      <PageTitle icon="table">Tabla Completa</PageTitle>
       <div className="acciones" style={{ marginBottom: 14 }}>
-        <button className="btn btn-oro" onClick={descargarCSV}>⬇ Exportar CSV</button>
+        <button className="btn btn-oro" onClick={descargarCSV}>
+          <Icon name="download" size={16} /> Exportar CSV
+        </button>
       </div>
       <div className="tarjeta tabla-scroll">
         <table>

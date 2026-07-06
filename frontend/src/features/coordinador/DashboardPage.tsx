@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../shared/api/client';
 import { useSocketEvent } from '../../shared/hooks/useSocket';
+import { Icon, PageTitle } from '../../shared/components/icons';
 
 interface Stats {
   totalMesas: number; mesasInstaladas: number; totalActas: number; actasConfirmadas: number;
@@ -29,7 +30,7 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <h2>📊 Dashboard</h2>
+      <PageTitle icon="chart">Dashboard</PageTitle>
       <div className="grid-stats">
         <div className="stat"><div className="valor">{stats?.totalVotos ?? '—'}</div><div className="etiqueta">Votos contabilizados</div></div>
         <div className="stat"><div className="valor">{stats?.pctAvance ?? 0}%</div><div className="etiqueta">Avance de actas</div></div>
@@ -40,17 +41,21 @@ export default function DashboardPage() {
       </div>
 
       <div className="tarjeta">
-        <h3 style={{ marginBottom: 14 }}>🏆 Ranking de candidatos (en vivo)</h3>
+        <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Icon name="trophy" size={17} style={{ color: 'var(--dorado-claro)' }} />
+          Ranking de candidatos
+          <span className="chip chip-verde" style={{ fontSize: 10.5 }}>EN VIVO</span>
+        </h3>
         {(rankingData?.ranking ?? []).map((r) => (
-          <div key={r.candidatoId} style={{ marginBottom: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 4 }}>
-              <span><b>{r.nombre}</b> <span style={{ color: 'var(--texto-2)' }}>— {r.agrupacion}</span></span>
-              <span><b>{r.votos}</b> ({r.pct}%)</span>
+          <div key={r.candidatoId} style={{ marginBottom: 13 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 5 }}>
+              <span><b>{r.nombre}</b> <span className="texto-2">— {r.agrupacion}</span></span>
+              <span style={{ fontVariantNumeric: 'tabular-nums' }}><b>{r.votos}</b> <span className="texto-2">({r.pct}%)</span></span>
             </div>
             <div className="barra"><div style={{ width: `${r.pct}%`, background: `#${r.color}` }} /></div>
           </div>
         ))}
-        {(!rankingData || rankingData.ranking.length === 0) && <p style={{ color: 'var(--texto-2)' }}>Aún no hay votos confirmados.</p>}
+        {(!rankingData || rankingData.ranking.length === 0) && <p className="texto-2">Aún no hay votos confirmados.</p>}
       </div>
     </div>
   );

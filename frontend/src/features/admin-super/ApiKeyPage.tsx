@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../shared/api/client';
+import { Icon, PageTitle } from '../../shared/components/icons';
 
 export default function ApiKeyPage() {
   const qc = useQueryClient();
@@ -15,7 +16,7 @@ export default function ApiKeyPage() {
   const guardar = useMutation({
     mutationFn: () => api.post('/config/gemini-key', { apiKey }),
     onSuccess: () => {
-      setMsg({ tipo: 'ok', texto: '✓ API Key guardada (cifrada AES-256 en base de datos)' });
+      setMsg({ tipo: 'ok', texto: 'API Key guardada (cifrada AES-256 en base de datos)' });
       setApiKey('');
       qc.invalidateQueries({ queryKey: ['gemini-key'] });
     },
@@ -34,17 +35,18 @@ export default function ApiKeyPage() {
 
   return (
     <div>
-      <h2>🔑 API Key de Google Gemini Vision</h2>
+      <PageTitle icon="key">API Key de Google Gemini Vision</PageTitle>
       <div className="alerta-msg alerta-error" style={{ marginBottom: 14 }}>
-        🔒 Solo el Admin Super puede gestionar esta clave. Se guarda cifrada y NUNCA se muestra de vuelta.
+        <Icon name="lock" size={16} />
+        Solo el Admin Super puede gestionar esta clave. Se guarda cifrada y NUNCA se muestra de vuelta.
       </div>
 
       <div className="tarjeta">
         <p style={{ marginBottom: 12 }}>
           Estado:{' '}
           {data?.hasKey
-            ? <span className="chip chip-verde">✓ Configurada — OCR activo</span>
-            : <span className="chip chip-rojo">Sin configurar — OCR deshabilitado</span>}
+            ? <span className="chip chip-verde"><Icon name="check" size={13} />Configurada — OCR activo</span>
+            : <span className="chip chip-rojo"><Icon name="x" size={13} />Sin configurar — OCR deshabilitado</span>}
         </p>
 
         <form onSubmit={submit}>

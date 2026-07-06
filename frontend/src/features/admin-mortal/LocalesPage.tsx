@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../shared/api/client';
+import { PageTitle } from '../../shared/components/icons';
 
 interface Centro {
   id: number; codigo: string; nombre: string; direccion: string | null;
@@ -30,8 +31,8 @@ export default function LocalesPage() {
 
   return (
     <div>
-      <h2>🏫 Locales de Votación</h2>
-      <p style={{ color: 'var(--texto-2)', marginBottom: 14 }}>Asigna cada local a un Coordinador bajo tu cargo.</p>
+      <PageTitle icon="building">Locales de Votación</PageTitle>
+      <p className="texto-2" style={{ marginBottom: 14 }}>Asigna cada local a un Coordinador bajo tu cargo.</p>
       <div className="tarjeta tabla-scroll">
         <table>
           <thead><tr><th>Código</th><th>Local</th><th>Distrito</th><th>Mesas</th><th>Coordinador asignado</th></tr></thead>

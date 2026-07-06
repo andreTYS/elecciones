@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../shared/api/client';
+import { Icon, PageTitle } from '../../shared/components/icons';
 
 interface Usuario { id: number; nombre: string; rol: string; activo: boolean }
 interface Cert { id: number; createdAt: string; user: { id: number; nombre: string } }
@@ -20,7 +21,7 @@ export default function CertificadosPage() {
 
   const emitir = useMutation({
     mutationFn: (userId: number) => api.post(`/certificados/${userId}`),
-    onSuccess: () => { setMsg('✓ Certificado emitido'); qc.invalidateQueries({ queryKey: ['certificados'] }); },
+    onSuccess: () => { setMsg('Certificado emitido correctamente'); qc.invalidateQueries({ queryKey: ['certificados'] }); },
     onError: (e: any) => setMsg(e.response?.data?.error || 'Error al emitir'),
   });
 
@@ -38,7 +39,7 @@ export default function CertificadosPage() {
 
   return (
     <div>
-      <h2>📜 Certificados de Participación</h2>
+      <PageTitle icon="award">Certificados de Participación</PageTitle>
       {msg && <div className="alerta-msg alerta-ok">{msg}</div>}
       <div className="tarjeta">
         <h3 style={{ marginBottom: 10 }}>Emitir certificado</h3>
@@ -70,7 +71,9 @@ export default function CertificadosPage() {
                   <td>{c.user.nombre}</td>
                   <td style={{ color: 'var(--texto-2)' }}>{new Date(c.createdAt).toLocaleString('es-PE')}</td>
                   <td style={{ textAlign: 'right' }}>
-                    <button className="btn btn-ghost btn-sm" onClick={() => descargar(c.id)}>⬇ Descargar</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => descargar(c.id)}>
+                      <Icon name="download" size={14} /> Descargar
+                    </button>
                   </td>
                 </tr>
               ))}

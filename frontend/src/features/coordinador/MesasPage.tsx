@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../shared/api/client';
 import { useSocketEvent } from '../../shared/hooks/useSocket';
+import { PageTitle } from '../../shared/components/icons';
 
 interface Mesa {
   id: number; numero: string; estadoInstalada: boolean | null;
@@ -33,7 +34,7 @@ export default function MesasPage() {
 
   return (
     <div>
-      <h2>🪑 Mesas y Personeros</h2>
+      <PageTitle icon="clipboard">Mesas y Personeros</PageTitle>
       <div className="tarjeta tabla-scroll">
         <table>
           <thead><tr><th>Mesa</th><th>Local</th><th>Instalada</th><th>Acta</th><th>Personero asignado</th></tr></thead>

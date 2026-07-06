@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../shared/api/client';
+import { PageTitle } from '../../shared/components/icons';
 
 interface Distrito { id: number; nombre: string }
 interface Provincia { id: number; nombre: string; distritos: Distrito[] }
@@ -51,7 +52,7 @@ export default function ConteoPage() {
 
   return (
     <div>
-      <h2>🔢 Conteo de Votos</h2>
+      <PageTitle icon="tally">Conteo de Votos</PageTitle>
       <div className="tarjeta">
         <div className="fila-form">
           <div>

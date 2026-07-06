@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuthStore, Rol } from '../../shared/hooks/useAuth';
+import { Icon } from '../../shared/components/icons';
 
 const TABS: { rol: Rol; label: string }[] = [
   { rol: 'PERSONERO', label: 'Personero' },
@@ -43,9 +44,13 @@ export default function LoginPage() {
   return (
     <div className="login-wrap">
       <form className="login-caja" onSubmit={submit}>
-        <h1>Voto<span>Control</span> Moquegua</h1>
-        <p className="sub">Fiscalización Electoral — ERM 4 de octubre de 2026</p>
+        <div className="login-marca">
+          <span className="logo"><Icon name="shield" size={30} /></span>
+          <h1>Voto<span>Control</span> Moquegua</h1>
+        </div>
+        <p className="sub">Fiscalización Electoral · ERM 4 de octubre de 2026</p>
 
+        <label>Ingresar como</label>
         <div className="tabs">
           {TABS.map((t) => (
             <button key={t.rol} type="button" className={tab === t.rol ? 'activo' : ''} onClick={() => setTab(t.rol)}>
@@ -59,7 +64,7 @@ export default function LoginPage() {
         <label>Contraseña</label>
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
 
-        {error && <div className="alerta-msg alerta-error">{error}</div>}
+        {error && <div className="alerta-msg alerta-error"><Icon name="alert" size={16} />{error}</div>}
 
         <div className="acciones">
           <button className="btn btn-oro" style={{ width: '100%' }} disabled={loading}>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../shared/api/client';
+import { Icon, PageTitle } from '../../shared/components/icons';
 
 interface Candidato { id: number; nombre: string; agrupacion: string; numero: number; color: string }
 interface VotoRow { candidatoId: number; votos: number }
@@ -84,7 +85,7 @@ export default function ActaPage() {
     if (!actaId) return;
     try {
       await api.put(`/actas/${actaId}/confirmar`, { votos, votosNulos: nulos, votosBlancos: blancos });
-      setMsg({ tipo: 'ok', texto: '✓ Acta confirmada y enviada. Ya puedes reportar incidencias.' });
+      setMsg({ tipo: 'ok', texto: 'Acta confirmada y enviada. Ya puedes reportar incidencias.' });
       qc.invalidateQueries({ queryKey: ['acta', actaId] });
     } catch (e: any) {
       setMsg({ tipo: 'error', texto: e.response?.data?.error || 'Error al confirmar' });
@@ -96,7 +97,7 @@ export default function ActaPage() {
 
   return (
     <div>
-      <h2>📸 Acta de Escrutinio</h2>
+      <PageTitle icon="camera">Acta de Escrutinio</PageTitle>
 
       <div className="tarjeta">
         <label>Mesa</label>
@@ -110,18 +111,30 @@ export default function ActaPage() {
         <input type="file" ref={fileRef} accept="image/jpeg,image/png" capture="environment" />
         <div className="acciones">
           <button className="btn btn-oro" onClick={subir} disabled={subiendo || !!procesando}>
-            {subiendo ? 'Subiendo…' : '📤 Subir y extraer con IA'}
+            <Icon name="upload" size={16} />
+            {subiendo ? 'Subiendo…' : 'Subir y extraer con IA'}
           </button>
         </div>
       </div>
 
-      {msg && <div className={`alerta-msg ${msg.tipo === 'ok' ? 'alerta-ok' : 'alerta-error'}`}>{msg.texto}</div>}
+      {msg && (
+        <div className={`alerta-msg ${msg.tipo === 'ok' ? 'alerta-ok' : 'alerta-error'}`}>
+          <Icon name={msg.tipo === 'ok' ? 'check' : 'alert'} size={16} />
+          {msg.texto}
+        </div>
+      )}
 
       {procesando && (
-        <div className="tarjeta">⏳ Gemini AI está leyendo el acta… (estado: {acta!.estadoOCR})</div>
+        <div className="tarjeta" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Icon name="refresh" size={18} style={{ color: 'var(--dorado-claro)' }} />
+          Gemini AI está leyendo el acta… (estado: {acta!.estadoOCR})
+        </div>
       )}
       {acta?.estadoOCR === 'ERROR' && (
-        <div className="alerta-msg alerta-error">OCR falló: {acta.observaciones || 'error desconocido'}. Puedes reintentar la subida.</div>
+        <div className="alerta-msg alerta-error">
+          <Icon name="alert" size={16} />
+          OCR falló: {acta.observaciones || 'error desconocido'}. Puedes reintentar la subida.
+        </div>
       )}
 
       {listoParaRevisar && candidatos && (
@@ -129,7 +142,8 @@ export default function ActaPage() {
           <h3>Revisar y corregir votos {acta!.confianzaOCR != null && `(confianza IA: ${Math.round(acta!.confianzaOCR * 100)}%)`}</h3>
           {acta!.alertas.length > 0 && (
             <div className="alerta-msg alerta-error">
-              {acta!.alertas.map((a) => <div key={a.id}>⚠ {a.mensaje}</div>)}
+              <Icon name="alert" size={16} />
+              <div>{acta!.alertas.map((a) => <div key={a.id}>{a.mensaje}</div>)}</div>
             </div>
           )}
           <table>
@@ -139,7 +153,7 @@ export default function ActaPage() {
                 <tr key={c.id}>
                   <td><span className="chip" style={{ background: `#${c.color}33`, color: `#${c.color}` }}>{c.numero}</span></td>
                   <td>{c.nombre}</td>
-                  <td style={{ color: 'var(--texto-2)' }}>{c.agrupacion}</td>
+                  <td className="texto-2">{c.agrupacion}</td>
                   <td>
                     <input type="number" min={0}
                       value={votos.find((v) => v.candidatoId === c.id)?.votos ?? 0}
@@ -155,12 +169,19 @@ export default function ActaPage() {
             <div><label>Votos en blanco</label><input type="number" min={0} value={blancos} onChange={(e) => setBlancos(Number(e.target.value))} /></div>
           </div>
           <div className="acciones">
-            <button className="btn btn-verde" onClick={confirmarActa}>✓ Confirmar acta</button>
+            <button className="btn btn-verde" onClick={confirmarActa}>
+              <Icon name="check" size={16} /> Confirmar acta
+            </button>
           </div>
         </div>
       )}
 
-      {acta?.confirmada && <div className="alerta-msg alerta-ok">✓ Esta acta ya fue confirmada.</div>}
+      {acta?.confirmada && (
+        <div className="alerta-msg alerta-ok">
+          <Icon name="check" size={16} />
+          Esta acta ya fue confirmada.
+        </div>
+      )}
     </div>
   );
 }

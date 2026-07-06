@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../shared/api/client';
 import { useAuth } from '../../shared/hooks/useAuth';
 import { useSocketEvent } from '../../shared/hooks/useSocket';
+import { Icon, PageTitle } from '../../shared/components/icons';
 
 interface Urgencia { id: number; tipo: string; detalle: string; resuelta: boolean; createdAt: string }
 
@@ -23,7 +24,7 @@ export default function UrgenciasPage() {
 
   const crear = useMutation({
     mutationFn: () => api.post('/urgencias', { tipo, detalle }),
-    onSuccess: () => { setMsg('✓ Reporte de urgencia enviado al Admin Super'); setDetalle(''); qc.invalidateQueries({ queryKey: ['urgencias'] }); },
+    onSuccess: () => { setMsg('Reporte de urgencia enviado al Admin Super'); setDetalle(''); qc.invalidateQueries({ queryKey: ['urgencias'] }); },
     onError: (e: any) => setMsg(e.response?.data?.error || 'Error al enviar'),
   });
 
@@ -36,7 +37,7 @@ export default function UrgenciasPage() {
 
   return (
     <div>
-      <h2>🚨 Reportes de Urgencia</h2>
+      <PageTitle icon="megaphone">Reportes de Urgencia</PageTitle>
 
       <form className="tarjeta" onSubmit={submit}>
         <h3>{esSuper ? 'Emitir urgencia' : 'Enviar urgencia al Admin Super'}</h3>
@@ -51,7 +52,11 @@ export default function UrgenciasPage() {
         <label>Detalle</label>
         <textarea rows={3} value={detalle} onChange={(e) => setDetalle(e.target.value)} minLength={5} required />
         {msg && <div className="alerta-msg alerta-ok">{msg}</div>}
-        <div className="acciones"><button className="btn btn-rojo" disabled={crear.isPending}>🚨 Enviar urgencia</button></div>
+        <div className="acciones">
+          <button className="btn btn-rojo" disabled={crear.isPending}>
+            <Icon name="send" size={15} /> Enviar urgencia
+          </button>
+        </div>
       </form>
 
       <div className="tarjeta">
@@ -67,7 +72,7 @@ export default function UrgenciasPage() {
                 </span>
               </div>
               {u.resuelta ? (
-                <span className="chip chip-verde">Resuelta ✓</span>
+                <span className="chip chip-verde"><Icon name="check" size={13} />Resuelta</span>
               ) : esSuper ? (
                 <button className="btn btn-verde btn-sm" onClick={() => resolver.mutate(u.id)}>Resolver</button>
               ) : (

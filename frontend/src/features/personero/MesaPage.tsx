@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../shared/api/client';
+import { Icon, PageTitle } from '../../shared/components/icons';
 
 interface Mesa {
   id: number;
@@ -27,25 +28,26 @@ export default function MesaPage() {
 
   return (
     <div>
-      <h2>🗳️ Mi Mesa</h2>
+      <PageTitle icon="ballot">Mi Mesa</PageTitle>
       {mesas.length === 0 && <div className="tarjeta">No tienes mesas asignadas. Contacta a tu coordinador.</div>}
       {mesas.map((m) => (
         <div className="tarjeta" key={m.id}>
           <h3>Mesa N° {m.numero}</h3>
-          <p style={{ color: 'var(--texto-2)', margin: '6px 0' }}>
+          <p className="texto-2" style={{ margin: '6px 0' }}>
             {m.centroVotacion.nombre} — Distrito {m.centroVotacion.distrito.nombre}
           </p>
-          <p style={{ margin: '10px 0' }}>
+          <p style={{ margin: '12px 0', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             Estado:{' '}
             {m.estadoInstalada === null ? (
               <span className="chip chip-gris">Sin confirmar</span>
             ) : m.estadoInstalada ? (
-              <span className="chip chip-verde">INSTALADA ✓</span>
+              <span className="chip chip-verde"><Icon name="check" size={13} />Instalada</span>
             ) : (
-              <span className="chip chip-rojo">NO INSTALADA</span>
+              <span className="chip chip-rojo"><Icon name="x" size={13} />No instalada</span>
             )}
             {m.horaConfirmacion && (
-              <span style={{ color: 'var(--texto-2)', fontSize: 13, marginLeft: 8 }}>
+              <span className="texto-2" style={{ fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <Icon name="clock" size={13} />
                 {new Date(m.horaConfirmacion).toLocaleTimeString('es-PE')}
               </span>
             )}
@@ -53,11 +55,11 @@ export default function MesaPage() {
           <div className="acciones">
             <button className="btn btn-verde" disabled={confirmar.isPending}
               onClick={() => confirmar.mutate({ id: m.id, instalada: true })}>
-              ✓ Mesa instalada
+              <Icon name="check" size={16} /> Mesa instalada
             </button>
             <button className="btn btn-rojo" disabled={confirmar.isPending}
               onClick={() => confirmar.mutate({ id: m.id, instalada: false })}>
-              ✗ NO instalada
+              <Icon name="x" size={16} /> No instalada
             </button>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../shared/api/client';
 import { useSocketEvent } from '../../shared/hooks/useSocket';
+import { Icon, PageTitle } from '../../shared/components/icons';
 
 interface Incidencia {
   id: number; tipo: string; descripcion: string; severidad: 'ALTA' | 'MEDIA' | 'BAJA';
@@ -26,7 +27,7 @@ export default function IncidenciasRecibidasPage() {
 
   return (
     <div>
-      <h2>📩 Incidencias Recibidas</h2>
+      <PageTitle icon="inbox">Incidencias Recibidas</PageTitle>
       {(data ?? []).length === 0 && <div className="tarjeta">Sin incidencias reportadas.</div>}
       {(data ?? []).map((i) => (
         <div className="tarjeta" key={i.id} style={{ opacity: i.resuelta ? 0.6 : 1 }}>
@@ -39,7 +40,7 @@ export default function IncidenciasRecibidasPage() {
               </span>
             </div>
             {i.resuelta ? (
-              <span className="chip chip-verde">Resuelta ✓</span>
+              <span className="chip chip-verde"><Icon name="check" size={13} />Resuelta</span>
             ) : (
               <button className="btn btn-verde btn-sm" onClick={() => resolver.mutate(i.id)}>Marcar resuelta</button>
             )}

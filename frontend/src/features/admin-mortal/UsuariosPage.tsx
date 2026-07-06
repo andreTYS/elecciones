@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../shared/api/client';
 import { useAuth, ROLE_LEVEL, Rol } from '../../shared/hooks/useAuth';
+import { PageTitle } from '../../shared/components/icons';
 
 interface Usuario {
   id: number; nombre: string; dni: string | null; username: string; rol: Rol; activo: boolean;
@@ -46,7 +47,7 @@ export default function UsuariosPage() {
   const crear = useMutation({
     mutationFn: (payload: object) => api.post('/users', payload),
     onSuccess: () => {
-      setMsg({ tipo: 'ok', texto: '✓ Usuario creado' });
+      setMsg({ tipo: 'ok', texto: 'Usuario creado correctamente' });
       setForm({ nombre: '', dni: '', username: '', password: '', rol: 'PERSONERO', colorPartido: '', numeroPartido: '', distritoId: '' });
       qc.invalidateQueries({ queryKey: ['users'] });
     },
@@ -79,7 +80,7 @@ export default function UsuariosPage() {
 
   return (
     <div>
-      <h2>👥 Gestión de Usuarios</h2>
+      <PageTitle icon="users">Gestión de Usuarios</PageTitle>
 
       <form className="tarjeta" onSubmit={submit}>
         <h3>Crear usuario</h3>
