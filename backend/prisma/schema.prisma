@@ -1,0 +1,241 @@
+// VotoControl Moquegua 2026 — Schema Prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Rol {
+  SUPER_ADMIN
+  ADMIN_MORTAL
+  COORDINADOR
+  PERSONERO
+}
+
+enum EstadoOCR {
+  PENDIENTE
+  PROCESANDO
+  COMPLETADO
+  ERROR
+  REQUIERE_REVISION
+}
+
+enum Severidad {
+  ALTA
+  MEDIA
+  BAJA
+}
+
+model Region {
+  id         Int         @id @default(autoincrement())
+  ubigeo     String      @unique
+  nombre     String
+  provincias Provincia[]
+}
+
+model Provincia {
+  id        Int        @id @default(autoincrement())
+  ubigeo    String     @unique
+  nombre    String
+  regionId  Int
+  region    Region     @relation(fields: [regionId], references: [id])
+  distritos Distrito[]
+}
+
+model Distrito {
+  id              Int              @id @default(autoincrement())
+  ubigeo          String           @unique
+  nombre          String
+  provinciaId     Int
+  provincia       Provincia        @relation(fields: [provinciaId], references: [id])
+  centrosVotacion CentroVotacion[]
+  users           User[]
+}
+
+model CentroVotacion {
+  id            Int      @id @default(autoincrement())
+  codigo        String   @unique
+  nombre        String
+  direccion     String?
+  totalMesas    Int      @default(0)
+  distritoId    Int
+  distrito      Distrito @relation(fields: [distritoId], references: [id])
+  // Local asignado a un Coordinador (Admin Mortal asigna locales)
+  coordinadorId Int?
+  coordinador   User?    @relation("CentroCoordinador", fields: [coordinadorId], references: [id])
+  mesas         Mesa[]
+}
+
+model Mesa {
+  id               Int            @id @default(autoincrement())
+  numero           String
+  centroVotacionId Int
+  centroVotacion   CentroVotacion @relation(fields: [centroVotacionId], references: [id])
+  personeroId      Int?
+  personero        User?          @relation("MesaPersonero", fields: [personeroId], references: [id])
+  actas            Acta[]
+  estadoInstalada  Boolean?
+  horaConfirmacion DateTime?
+
+  @@unique([numero, centroVotacionId])
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  nombre       String
+  dni          String?
+  email        String?   @unique
+  username     String    @unique
+  passwordHash String
+  rol          Rol       @default(PERSONERO)
+  activo       Boolean   @default(true)
+  colorPartido String?
+  numeroPartido Int?
+  distritoId   Int?
+  distrito     Distrito? @relation(fields: [distritoId], references: [id])
+
+  // Jerarquia: cada usuario tiene un supervisor del nivel superior
+  supervisorId Int?
+  supervisor   User?  @relation("Supervision", fields: [supervisorId], references: [id])
+  supervisados User[] @relation("Supervision")
+
+  // Modulos permitidos (JSON array de strings)
+  modulosPermitidos Json?
+
+  sesiones             Sesion[]
+  actas                Acta[]
+  incidencias          Incidencia[]  @relation("IncidenciaPersonero")
+  incidenciasRecibidas Incidencia[]  @relation("IncidenciaCoordinador")
+  alimentacion         Alimentacion[]
+  mesasAsignadas       Mesa[]        @relation("MesaPersonero")
+  centrosACargo        CentroVotacion[] @relation("CentroCoordinador")
+  certificados         Certificado[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Sesion {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id])
+  refreshToken String   @unique // hash sha256 del token, rotacion one-time-use
+  ip           String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+}
+
+model Candidato {
+  id         Int        @id @default(autoincrement())
+  nombre     String
+  agrupacion String
+  numero     Int
+  color      String     @default("1B3A6B")
+  activo     Boolean    @default(true)
+  votos      VotoActa[]
+}
+
+model Acta {
+  id            Int        @id @default(autoincrement())
+  mesaId        Int
+  mesa          Mesa       @relation(fields: [mesaId], references: [id])
+  personeroId   Int
+  personero     User       @relation(fields: [personeroId], references: [id])
+  imagenUrl     String
+  imagenHash    String?
+  estadoOCR     EstadoOCR  @default(PENDIENTE)
+  confianzaOCR  Float?
+  observaciones String?
+  votosNulos    Int        @default(0)
+  votosBlancos  Int        @default(0)
+  totalVotantes Int        @default(0)
+  confirmada    Boolean    @default(false)
+  confirmadaAt  DateTime?
+  votos         VotoActa[]
+  alertas       Alerta[]
+  createdAt     DateTime   @default(now())
+}
+
+model VotoActa {
+  id          Int       @id @default(autoincrement())
+  actaId      Int
+  acta        Acta      @relation(fields: [actaId], references: [id])
+  candidatoId Int
+  candidato   Candidato @relation(fields: [candidatoId], references: [id])
+  votos       Int       @default(0)
+  confianza   String    @default("alta")
+
+  @@unique([actaId, candidatoId])
+}
+
+model Incidencia {
+  id            Int       @id @default(autoincrement())
+  tipo          String
+  descripcion   String
+  severidad     Severidad @default(MEDIA)
+  personeroId   Int
+  personero     User      @relation("IncidenciaPersonero", fields: [personeroId], references: [id])
+  coordinadorId Int?
+  coordinador   User?     @relation("IncidenciaCoordinador", fields: [coordinadorId], references: [id])
+  resuelta      Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+}
+
+model Alimentacion {
+  id     Int      @id @default(autoincrement())
+  userId Int
+  user   User     @relation(fields: [userId], references: [id])
+  tipo   String // desayuno, almuerzo, cena
+  hora   DateTime @default(now())
+
+  @@unique([userId, tipo])
+}
+
+model Certificado {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
+  pdfUrl     String
+  emitidoPor Int
+  createdAt  DateTime @default(now())
+}
+
+model ConfigSistema {
+  id    Int    @id @default(autoincrement())
+  clave String @unique
+  valor String // GEMINI_API_KEY se guarda aqui cifrada (AES-256-GCM), solo Super Admin
+}
+
+model Alerta {
+  id        Int      @id @default(autoincrement())
+  actaId    Int
+  acta      Acta     @relation(fields: [actaId], references: [id])
+  tipo      String
+  mensaje   String
+  resuelta  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Urgencia {
+  id        Int      @id @default(autoincrement())
+  tipo      String
+  detalle   String
+  emisorId  Int
+  resuelta  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  accion    String
+  entidad   String
+  entidadId Int?
+  detalle   Json?
+  ip        String?
+  createdAt DateTime @default(now())
+}

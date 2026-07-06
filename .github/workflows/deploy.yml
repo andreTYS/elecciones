@@ -1,0 +1,50 @@
+name: Deploy VotoControl
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Backend typecheck
+        working-directory: backend
+        run: |
+          npm ci
+          npx prisma generate
+          npm run typecheck
+      - name: Frontend build
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+  deploy:
+    needs: build-check
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: 76.13.234.161
+          username: root
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            mkdir -p /opt/votocontrol
+            cd /opt/votocontrol
+            if [ ! -d .git ]; then
+              git clone https://github.com/andreTYS/elecciones.git .
+            fi
+            git fetch origin main
+            git reset --hard origin/main
+            docker compose -f docker-compose.prod.yml up -d --build
+            # Migraciones corren en el arranque del contenedor (CMD del Dockerfile)
+            docker exec votocontrol-backend node dist/prisma/seed.js || true

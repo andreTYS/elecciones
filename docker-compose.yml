@@ -1,0 +1,21 @@
+# Desarrollo local: docker compose up -d db redis
+# Luego: cd backend && npm run dev · cd frontend && npm run dev
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: votocontrol
+      POSTGRES_PASSWORD: votocontrol
+      POSTGRES_DB: votocontrol
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  pgdata:
