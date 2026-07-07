@@ -1,6 +1,10 @@
 # VotoControl Moquegua 2026 — Producción (VPS Hostinger + Traefik)
 # Requiere .env junto a este archivo con: DATABASE_URL, REDIS_URL, JWT_SECRET,
 # JWT_REFRESH_SECRET, GEMINI_ENCRYPT_KEY, DB_USER, DB_PASS
+#
+# El Traefik de este VPS corre en el stack "n8n" (contenedor n8n-traefik-1) y
+# enruta por la red externa "n8n_default" usando el certresolver "mytlschallenge"
+# (mismo patrón que moqueguasoft.com y los demás sitios del servidor).
 
 services:
   votocontrol-backend:
@@ -22,12 +26,13 @@ services:
     volumes:
       - votocontrol-uploads:/app/uploads
     networks:
-      - traefik-network
+      - n8n_default
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.votocontrol-api.rule=Host(`votos.masredespro.com`) && (PathPrefix(`/api`) || PathPrefix(`/socket.io`))"
       - "traefik.http.routers.votocontrol-api.entrypoints=websecure"
-      - "traefik.http.routers.votocontrol-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.votocontrol-api.tls=true"
+      - "traefik.http.routers.votocontrol-api.tls.certresolver=mytlschallenge"
       - "traefik.http.services.votocontrol-api.loadbalancer.server.port=4000"
 
   votocontrol-frontend:
@@ -36,19 +41,14 @@ services:
     restart: always
     depends_on:
       - votocontrol-backend
-    # Puerto publicado en el host para servidores frontales que no son Traefik
-    # (Apache/Nginx del host hacen proxy a este puerto). El nginx interno del
-    # frontend ya enruta /api y /socket.io al backend, asi que basta un puerto.
-    ports:
-      - "${FRONT_PORT:-8085}:80"
     networks:
-      - traefik-network
+      - n8n_default
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.votocontrol.rule=Host(`votos.masredespro.com`)"
       - "traefik.http.routers.votocontrol.entrypoints=websecure"
-      - "traefik.http.routers.votocontrol.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.votocontrol.priority=1"
+      - "traefik.http.routers.votocontrol.tls=true"
+      - "traefik.http.routers.votocontrol.tls.certresolver=mytlschallenge"
       - "traefik.http.services.votocontrol.loadbalancer.server.port=80"
 
   votocontrol-db:
@@ -62,19 +62,19 @@ services:
     volumes:
       - votocontrol-postgres:/var/lib/postgresql/data
     networks:
-      - traefik-network
+      - n8n_default
 
   votocontrol-redis:
     image: redis:7-alpine
     container_name: votocontrol-redis
     restart: always
     networks:
-      - traefik-network
+      - n8n_default
 
 volumes:
   votocontrol-postgres:
   votocontrol-uploads:
 
 networks:
-  traefik-network:
+  n8n_default:
     external: true

@@ -31,18 +31,18 @@ cd /opt/sites/votos.masredespro.com
 git clone https://github.com/andreTYS/elecciones.git .
 ```
 
-Verifica que la red de Traefik exista (el compose la usa como externa):
+El Traefik de este VPS corre dentro del stack de n8n (contenedor `n8n-traefik-1`)
+y todos los sitios se enrutan por la red externa **`n8n_default`** con el
+certresolver **`mytlschallenge`** — `docker-compose.prod.yml` ya está configurado
+así. Verifica que la red exista (siempre debería, si n8n ya está corriendo):
 
 ```bash
-docker network ls | grep traefik-network
-# si no existe:
-docker network create traefik-network
+docker network ls | grep n8n_default
 ```
 
-> **Nota:** si tu Traefik usa otro nombre de red o de certresolver (revisa las labels
-> de otro sitio que ya tengas corriendo: `docker inspect <contenedor> | grep traefik`),
-> ajusta en `docker-compose.prod.yml` la red `traefik-network` y/o
-> `tls.certresolver=letsencrypt` para que coincidan.
+> Si en tu VPS el Traefik usa otro nombre de red o de certresolver, revísalo
+> con `docker inspect <un-contenedor-web-que-ya-funcione> --format '{{json .Config.Labels}}'`
+> y ajusta `docker-compose.prod.yml` en consecuencia.
 
 ## Paso 2 — Crear el `.env` de producción (una sola vez)
 
@@ -100,7 +100,8 @@ curl -s https://votos.masredespro.com/api/health
 ```
 
 Abre `https://votos.masredespro.com` en el navegador: debe cargar el login
-con candado verde (SSL de Let's Encrypt, puede tardar ~1 min la primera vez).
+con candado verde (SSL emitido por el certresolver `mytlschallenge`, puede
+tardar ~1 min la primera vez que Traefik detecta el router).
 
 ## Paso 5 — Configuración inicial en la app
 
@@ -157,8 +158,8 @@ docker restart votocontrol-backend
 
 | Síntoma | Causa probable | Solución |
 | --- | --- | --- |
-| SSL no emite / "default certificate" | DNS aún no propaga, o certresolver con otro nombre | Verifica `dig`, revisa el nombre del certresolver en tu Traefik |
-| 502 Bad Gateway | Backend aún compilando o caído | `docker logs votocontrol-backend` |
+| SSL no emite / "default certificate" | DNS aún no propaga | Verifica `dig +short votos.masredespro.com` |
+| 502 Bad Gateway | Backend aún migrando/arrancando (tarda ~10-20s) o caído | `docker logs votocontrol-backend` |
 | "Variables de entorno inválidas" al arrancar | `.env` incompleto | Compara con la lista del Paso 2 |
 | El OCR devuelve error | API Key no configurada o inválida | Ingresarla como superadmin en API Key Gemini |
-| No conecta a la red traefik | Red con otro nombre | `docker network ls` y ajustar `docker-compose.prod.yml` |
+| `network n8n_default declared as external, but could not be found` | El stack de n8n no está corriendo o tiene otro nombre de red | `docker network ls`, ajustar `docker-compose.prod.yml` si el nombre difiere |
