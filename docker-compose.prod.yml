@@ -33,6 +33,10 @@ services:
       - "traefik.http.routers.votocontrol-api.entrypoints=websecure"
       - "traefik.http.routers.votocontrol-api.tls=true"
       - "traefik.http.routers.votocontrol-api.tls.certresolver=mytlschallenge"
+      # Prioridad explicita: el VPS tiene otro sitio (panel de hosting) con la
+      # misma regla Host(`votos.masredespro.com`) sin PathPrefix; sin prioridad
+      # explicita Traefik elige entre reglas empatadas de forma no determinista.
+      - "traefik.http.routers.votocontrol-api.priority=1000"
       - "traefik.http.services.votocontrol-api.loadbalancer.server.port=4000"
 
   votocontrol-frontend:
@@ -49,6 +53,10 @@ services:
       - "traefik.http.routers.votocontrol.entrypoints=websecure"
       - "traefik.http.routers.votocontrol.tls=true"
       - "traefik.http.routers.votocontrol.tls.certresolver=mytlschallenge"
+      # Prioridad explicita mas alta que el placeholder Apache del panel de
+      # hosting (misma regla Host exacta), pero menor que votocontrol-api para
+      # que /api y /socket.io se evaluen primero.
+      - "traefik.http.routers.votocontrol.priority=900"
       - "traefik.http.services.votocontrol.loadbalancer.server.port=80"
 
   votocontrol-db:
