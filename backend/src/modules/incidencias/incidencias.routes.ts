@@ -17,20 +17,13 @@ const crearSchema = z.object({
   severidad: z.nativeEnum(Severidad).default('MEDIA'),
 });
 
-// POST /api/incidencias → crear (Personero, SOLO despues de confirmar un acta)
+// POST /api/incidencias → crear (Personero, disponible en todo momento)
 router.post('/', async (req: Request, res: Response) => {
   const me = req.user!;
   const data = crearSchema.parse(req.body);
 
   const personero = await prisma.user.findUnique({ where: { id: me.id } });
   if (!personero) return res.status(401).json({ error: 'Usuario no encontrado' });
-
-  if (me.rol === 'PERSONERO') {
-    const actaConfirmada = await prisma.acta.findFirst({ where: { personeroId: me.id, confirmada: true } });
-    if (!actaConfirmada) {
-      return res.status(403).json({ error: 'Solo puedes reportar incidencias después de confirmar tu acta' });
-    }
-  }
 
   const incidencia = await prisma.incidencia.create({
     data: {

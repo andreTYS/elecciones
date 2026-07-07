@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useRBAC } from '../hooks/useRBAC';
 import { api } from '../api/client';
 import { disconnectSocket } from '../hooks/useSocket';
+import { useTheme } from '../hooks/useTheme';
 import { Icon, IconName } from './icons';
 
 const ROL_LABEL: Record<string, string> = {
@@ -62,6 +63,7 @@ const NAV: { grupo: string; items: NavItem[] }[] = [
 export default function Layout() {
   const { user, logout } = useAuth();
   const { canAccess, hasModulo } = useRBAC();
+  const { theme, toggle } = useTheme();
   const navigate = useNavigate();
 
   const salir = async () => {
@@ -105,10 +107,20 @@ export default function Layout() {
             );
           })}
         </nav>
-        <button className="btn btn-ghost btn-sm" onClick={salir}>
-          <Icon name="logout" size={15} />
-          Cerrar sesión
-        </button>
+        <div className="sidebar-pie">
+          <button className="btn btn-ghost btn-sm" onClick={salir}>
+            <Icon name="logout" size={15} />
+            Cerrar sesión
+          </button>
+          <button
+            className="btn btn-ghost btn-sm theme-toggle"
+            onClick={toggle}
+            title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+            aria-label="Cambiar tema"
+          >
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={16} />
+          </button>
+        </div>
       </aside>
       <main className="contenido">
         <Outlet />

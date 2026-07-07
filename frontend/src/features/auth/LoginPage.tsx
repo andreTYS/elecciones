@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuthStore, Rol } from '../../shared/hooks/useAuth';
+import { useTheme } from '../../shared/hooks/useTheme';
 import { Icon } from '../../shared/components/icons';
 
 const TABS: { rol: Rol; label: string }[] = [
@@ -18,6 +19,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const setSession = useAuthStore((s) => s.setSession);
+  const { theme, toggle } = useTheme();
   const navigate = useNavigate();
 
   const submit = async (e: FormEvent) => {
@@ -43,6 +45,15 @@ export default function LoginPage() {
 
   return (
     <div className="login-wrap">
+      <button
+        type="button"
+        className="btn btn-ghost btn-sm login-theme"
+        onClick={toggle}
+        title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+        aria-label="Cambiar tema"
+      >
+        <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={16} />
+      </button>
       <form className="login-caja" onSubmit={submit}>
         <div className="login-marca">
           <span className="logo"><Icon name="shield" size={30} /></span>
