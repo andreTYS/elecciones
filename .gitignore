@@ -4,7 +4,8 @@ build/
 .env
 .env.*
 !.env.example
-uploads/
+# solo los archivos subidos en runtime (no el modulo src/modules/uploads)
+backend/uploads/
 *.log
 .DS_Store
 coverage/
