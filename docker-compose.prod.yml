@@ -36,6 +36,11 @@ services:
     restart: always
     depends_on:
       - votocontrol-backend
+    # Puerto publicado en el host para servidores frontales que no son Traefik
+    # (Apache/Nginx del host hacen proxy a este puerto). El nginx interno del
+    # frontend ya enruta /api y /socket.io al backend, asi que basta un puerto.
+    ports:
+      - "${FRONT_PORT:-8085}:80"
     networks:
       - traefik-network
     labels:
