@@ -4,13 +4,23 @@ import legacy from '@vitejs/plugin-legacy';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  // El bundle "moderno" de Vite asume por defecto Safari 14+ (sintaxis ES2020:
+  // ?., ??). Safari 11-13.3 (iPhone 6s/7/8 con iOS viejo) SI soporta
+  // <script type="module"> pero NO esa sintaxis: el navegador cargaria el
+  // bundle moderno (no el legacy) y fallaria en silencio -> pantalla blanca.
+  // Bajar el target aqui tambien fuerza a esbuild a transpilar esa sintaxis
+  // en el bundle moderno, cerrando ese hueco especifico de iPhone.
+  build: {
+    target: ['es2015', 'safari11'],
+  },
   plugins: [
     react(),
-    // Soporte para celulares antiguos (Android 5+, Safari 11+): genera un
-    // bundle legacy con polyfills ademas del moderno; sin esto los telefonos
-    // viejos quedan en pantalla blanca al no poder parsear ES2020+.
+    // Soporte para celulares muy antiguos sin soporte de ES Modules
+    // (Android 5-6 con navegador de fabrica, Safari <10.1): genera un
+    // segundo bundle legacy transpilado a ES5 con polyfills via core-js.
     legacy({
       targets: ['defaults', 'android >= 5', 'chrome >= 60', 'safari >= 11', 'not dead'],
+      renderModernChunks: true,
     }),
     VitePWA({
       registerType: 'autoUpdate',
