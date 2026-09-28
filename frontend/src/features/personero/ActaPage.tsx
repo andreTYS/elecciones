@@ -146,24 +146,26 @@ export default function ActaPage() {
               <div>{acta!.alertas.map((a) => <div key={a.id}>{a.mensaje}</div>)}</div>
             </div>
           )}
-          <table>
-            <thead><tr><th>N°</th><th>Candidato</th><th>Agrupación</th><th style={{ width: 110 }}>Votos</th></tr></thead>
-            <tbody>
-              {candidatos.map((c) => (
-                <tr key={c.id}>
-                  <td><span className="chip" style={{ background: `#${c.color}33`, color: `#${c.color}` }}>{c.numero}</span></td>
-                  <td>{c.nombre}</td>
-                  <td className="texto-2">{c.agrupacion}</td>
-                  <td>
-                    <input type="number" min={0}
-                      value={votos.find((v) => v.candidatoId === c.id)?.votos ?? 0}
-                      onChange={(e) => setVotos((prev) => prev.map((v) => v.candidatoId === c.id ? { ...v, votos: Number(e.target.value) } : v))}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="tabla-scroll">
+            <table>
+              <thead><tr><th>N°</th><th>Candidato</th><th>Agrupación</th><th style={{ width: 90 }}>Votos</th></tr></thead>
+              <tbody>
+                {candidatos.map((c) => (
+                  <tr key={c.id}>
+                    <td><span className="chip" style={{ background: `#${c.color}33`, color: `#${c.color}` }}>{c.numero}</span></td>
+                    <td style={{ minWidth: 110 }}>{c.nombre}</td>
+                    <td className="texto-2" style={{ minWidth: 140 }}>{c.agrupacion}</td>
+                    <td>
+                      <input type="number" min={0} style={{ minWidth: 64 }}
+                        value={votos.find((v) => v.candidatoId === c.id)?.votos ?? 0}
+                        onChange={(e) => setVotos((prev) => prev.map((v) => v.candidatoId === c.id ? { ...v, votos: Number(e.target.value) } : v))}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           <div className="fila-form" style={{ marginTop: 12 }}>
             <div><label>Votos nulos</label><input type="number" min={0} value={nulos} onChange={(e) => setNulos(Number(e.target.value))} /></div>
             <div><label>Votos en blanco</label><input type="number" min={0} value={blancos} onChange={(e) => setBlancos(Number(e.target.value))} /></div>
