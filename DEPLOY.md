@@ -144,15 +144,40 @@ docker compose -f docker-compose.prod.yml up -d --build
 # Logs en vivo
 docker logs -f votocontrol-backend
 
-# Backup de la base de datos (hazlo ANTES y DURANTE el día de la elección)
-docker exec votocontrol-db pg_dump -U votocontrol votocontrol | gzip > backup-$(date +%F-%H%M).sql.gz
+# Backup manual (BD + fotos de actas) — hazlo ANTES del día de la elección para probarlo
+./scripts/backup.sh
 
-# Restaurar un backup
-gunzip -c backup-XXXX.sql.gz | docker exec -i votocontrol-db psql -U votocontrol votocontrol
+# Restaurar un backup de la base de datos
+./scripts/restore-db.sh backups/db_20261004_060000.dump.gz
 
 # Reiniciar solo el backend
 docker restart votocontrol-backend
 ```
+
+## Backups automáticos
+
+`scripts/backup.sh` respalda la base de datos (`pg_dump` en formato comprimido) y las
+fotos de actas (el volumen `votocontrol-uploads`) en `./backups/`, y borra automáticamente
+lo que tenga más de 14 días. Actívalo por cron **antes del día de la elección**:
+
+```bash
+crontab -e
+# Backup cada 2 horas el 3 y 4 de octubre de 2026, y diario el resto del año:
+0 */2 3-4 10 * cd /opt/sites/votos.masredespro.com && ./scripts/backup.sh >> /var/log/votocontrol-backup.log 2>&1
+0 3 * * * cd /opt/sites/votos.masredespro.com && ./scripts/backup.sh >> /var/log/votocontrol-backup.log 2>&1
+```
+
+Verifica que corrió bien:
+
+```bash
+tail -f /var/log/votocontrol-backup.log
+ls -lh /opt/sites/votos.masredespro.com/backups/
+```
+
+Los backups quedan en el disco del VPS. Para estar tranquilo el día de la elección,
+copia periódicamente la carpeta `backups/` fuera del servidor (por ejemplo con `scp`
+a tu laptop, o sincronizándola a un bucket S3/Backblaze si lo prefieres) — un backup
+que vive solo en el mismo disco que se puede caer no es un backup completo.
 
 ## Problemas comunes
 

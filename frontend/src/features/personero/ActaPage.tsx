@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../shared/api/client';
 import { Icon, PageTitle } from '../../shared/components/icons';
+import { compressImage } from '../../shared/utils/imageCompress';
+import { ActaPendiente, addActaPendiente, listActasPendientes, removeActaPendiente } from '../../shared/utils/offlineQueue';
 
 interface Candidato { id: number; nombre: string; agrupacion: string; numero: number; color: string }
 interface VotoRow { candidatoId: number; votos: number }
@@ -28,6 +30,9 @@ export default function ActaPage() {
   const [blancos, setBlancos] = useState(0);
   const [msg, setMsg] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
   const [subiendo, setSubiendo] = useState(false);
+  const [reintentandoOCR, setReintentandoOCR] = useState(false);
+  const [pendientes, setPendientes] = useState<ActaPendiente[]>([]);
+  const [sincronizando, setSincronizando] = useState(false);
 
   const { data: mesas } = useQuery({
     queryKey: ['mesas'],
@@ -63,21 +68,86 @@ export default function ActaPage() {
     }
   }, [acta?.estadoOCR, candidatos]);
 
+  const refrescarPendientes = useCallback(async () => {
+    try { setPendientes(await listActasPendientes()); } catch { /* IndexedDB no disponible: se ignora */ }
+  }, []);
+
+  // Intenta subir las actas guardadas localmente (por falta de señal). Se llama
+  // al montar, cuando el navegador recupera la conexión y manualmente.
+  const sincronizarPendientes = useCallback(async () => {
+    let lista: ActaPendiente[];
+    try { lista = await listActasPendientes(); } catch { return; }
+    if (lista.length === 0) return;
+    setSincronizando(true);
+    for (const p of lista) {
+      try {
+        const fd = new FormData();
+        fd.append('imagen', new File([p.blob], p.fileName, { type: p.fileType }));
+        fd.append('mesaId', String(p.mesaId));
+        const { data } = await api.post('/actas/upload', fd);
+        await removeActaPendiente(p.id);
+        if (p.mesaId === mesaId) {
+          setActaId(data.actaId);
+          setMsg({ tipo: 'ok', texto: 'Foto pendiente subida automáticamente. Extrayendo votos con IA…' });
+        }
+      } catch (e: any) {
+        if (!e.response) break; // seguimos sin señal, reintentamos más tarde
+        // el servidor rechazó la foto guardada (ya no aplica): la descartamos
+        await removeActaPendiente(p.id).catch(() => undefined);
+      }
+    }
+    setSincronizando(false);
+    await refrescarPendientes();
+  }, [mesaId, refrescarPendientes]);
+
+  useEffect(() => {
+    refrescarPendientes();
+    sincronizarPendientes();
+    window.addEventListener('online', sincronizarPendientes);
+    return () => window.removeEventListener('online', sincronizarPendientes);
+  }, [sincronizarPendientes, refrescarPendientes]);
+
   const subir = async () => {
     const file = fileRef.current?.files?.[0];
     if (!file || !mesaId) { setMsg({ tipo: 'error', texto: 'Selecciona mesa y foto del acta' }); return; }
     setSubiendo(true); setMsg(null);
+    const comprimida = await compressImage(file);
     try {
       const fd = new FormData();
-      fd.append('imagen', file);
+      fd.append('imagen', comprimida);
       fd.append('mesaId', String(mesaId));
       const { data } = await api.post('/actas/upload', fd);
       setActaId(data.actaId);
       setMsg({ tipo: 'ok', texto: 'Foto subida. Extrayendo votos con IA…' });
     } catch (e: any) {
-      setMsg({ tipo: 'error', texto: e.response?.data?.error || 'Error al subir' });
+      if (!e.response) {
+        // sin conexión: guardamos la foto en el dispositivo y la subimos apenas vuelva la señal
+        try {
+          await addActaPendiente({ mesaId, fileName: comprimida.name, fileType: comprimida.type, blob: comprimida });
+          await refrescarPendientes();
+          setMsg({ tipo: 'ok', texto: 'Sin conexión: la foto se guardó en este dispositivo y se subirá automáticamente cuando vuelva la señal.' });
+        } catch {
+          setMsg({ tipo: 'error', texto: 'Sin conexión y no se pudo guardar la foto localmente. Inténtalo de nuevo.' });
+        }
+      } else {
+        setMsg({ tipo: 'error', texto: e.response?.data?.error || 'Error al subir' });
+      }
     } finally {
       setSubiendo(false);
+    }
+  };
+
+  const reintentarOCR = async () => {
+    if (!actaId) return;
+    setReintentandoOCR(true);
+    try {
+      await api.post(`/actas/${actaId}/reintentar-ocr`);
+      setMsg({ tipo: 'ok', texto: 'Reintentando extraer los votos con IA…' });
+      qc.invalidateQueries({ queryKey: ['acta', actaId] });
+    } catch (e: any) {
+      setMsg({ tipo: 'error', texto: e.response?.data?.error || 'No se pudo reintentar' });
+    } finally {
+      setReintentandoOCR(false);
     }
   };
 
@@ -117,6 +187,24 @@ export default function ActaPage() {
         </div>
       </div>
 
+      {pendientes.length > 0 && (
+        <div className="alerta-msg alerta-error">
+          <Icon name="alert" size={16} />
+          <div>
+            {pendientes.length === 1 ? 'Tienes 1 foto de acta guardada en este dispositivo, pendiente de subir' : `Tienes ${pendientes.length} fotos de acta guardadas en este dispositivo, pendientes de subir`}
+            {sincronizando ? ' (subiendo ahora…)' : '.'}
+            {!sincronizando && (
+              <>
+                {' '}
+                <button className="btn btn-ghost btn-sm" onClick={sincronizarPendientes}>
+                  <Icon name="refresh" size={14} /> Reintentar ahora
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {msg && (
         <div className={`alerta-msg ${msg.tipo === 'ok' ? 'alerta-ok' : 'alerta-error'}`}>
           <Icon name={msg.tipo === 'ok' ? 'check' : 'alert'} size={16} />
@@ -133,7 +221,12 @@ export default function ActaPage() {
       {acta?.estadoOCR === 'ERROR' && (
         <div className="alerta-msg alerta-error">
           <Icon name="alert" size={16} />
-          OCR falló: {acta.observaciones || 'error desconocido'}. Puedes reintentar la subida.
+          <div>
+            OCR falló: {acta.observaciones || 'error desconocido'}.{' '}
+            <button className="btn btn-ghost btn-sm" onClick={reintentarOCR} disabled={reintentandoOCR}>
+              <Icon name="refresh" size={14} /> {reintentandoOCR ? 'Reintentando…' : 'Reintentar con la misma foto'}
+            </button>
+          </div>
         </div>
       )}
 

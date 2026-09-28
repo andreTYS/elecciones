@@ -128,6 +128,34 @@ router.post('/upload', uploadLimiter, upload.single('imagen'), async (req: Reque
   return res.status(202).json({ actaId: acta.id, estadoOCR: 'PENDIENTE' });
 });
 
+// POST /api/actas/:id/reintentar-ocr → reintenta el OCR con la misma imagen ya subida (sin resubir)
+router.post('/:id/reintentar-ocr', uploadLimiter, async (req: Request, res: Response) => {
+  const me = req.user!;
+  const id = Number(req.params.id);
+  const acta = await prisma.acta.findUnique({ where: { id } });
+  if (!acta) return res.status(404).json({ error: 'Acta no encontrada' });
+  if (me.rol === 'PERSONERO' && acta.personeroId !== me.id) {
+    return res.status(403).json({ error: 'Acta de otro personero' });
+  }
+  if (acta.confirmada) return res.status(400).json({ error: 'Acta ya confirmada' });
+  if (acta.estadoOCR !== 'ERROR') {
+    return res.status(400).json({ error: 'Solo se puede reintentar un acta en estado ERROR' });
+  }
+
+  const imgPath = path.join(env.UPLOAD_DIR, acta.imagenUrl);
+  if (!fs.existsSync(imgPath)) {
+    return res.status(410).json({ error: 'La foto original ya no está disponible en el servidor. Sube una foto nueva.' });
+  }
+  const buffer = fs.readFileSync(imgPath);
+
+  await prisma.acta.update({ where: { id }, data: { estadoOCR: 'PENDIENTE', observaciones: null } });
+  await audit({ userId: me.id, accion: 'REINTENTAR_OCR', entidad: 'Acta', entidadId: id, ip: req.ip });
+
+  void runOCR(id, buffer);
+
+  return res.status(202).json({ actaId: id, estadoOCR: 'PENDIENTE' });
+});
+
 // GET /api/actas/:id/status → estado del OCR + votos extraidos
 router.get('/:id/status', async (req: Request, res: Response) => {
   const acta = await prisma.acta.findUnique({
